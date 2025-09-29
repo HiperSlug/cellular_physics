@@ -4,8 +4,8 @@ use std::sync::atomic::{AtomicU8, Ordering};
 
 fn main() {}
 
-const MAX_SPEED: I8Vec2 = I8Vec2::splat(3);
-const MIN_SPEED: I8Vec2 = I8Vec2::splat(-3);
+const MAX_SPEED: i8 = 3;
+const MIN_SPEED: i8 = -3;
 
 const MASK_3: u8 = 1 << 3;
 
@@ -106,7 +106,7 @@ struct SubStepGrid {
 }
 
 impl SubStepGrid {
-    fn sync_buffers(&mut self) {
+    fn push_writes(&mut self) {
         for (read, write) in self.read.iter_mut().zip(&self.write) {
             *read = write.swap(Cell::NONE, Ordering::Relaxed);
         }
@@ -114,8 +114,6 @@ impl SubStepGrid {
 
     // n 0..3
     fn sub_step(&self, n: u8) {
-        let skip = I8Vec2::splat(n as i8);
-
         for (i, cell) in self.read.iter().enumerate() {
             let Some(mut vel) = cell.velocity() else {
                 continue;
@@ -128,29 +126,39 @@ impl SubStepGrid {
                 let adj_i = Shape::linearize(adj_pos.into()) as usize;
                 let adj_cell = self.read[adj_i];
 
-                let Some(mut adj_vel) = adj_cell.velocity() else {
+                let Some(adj_vel) = adj_cell.velocity() else {
                     continue;
                 };
 
-                let adj_sub_step_delta = (adj_vel - skip).signum(); // - skip doesnt work!!!
+                let adj_sub_step_delta = (adj_vel % n as i8).signum(); // HERE
                 let adj_dst = (adj_pos.as_ivec2() + adj_sub_step_delta.as_ivec2()).as_uvec2();
 
                 if adj_dst == pos {
                     let adj_mass = adj_cell.mass();
-                    collision((mass, &mut vel), (adj_mass, &mut adj_vel));
+                    if offset.x != 0 {
+                        vel.x = collision(mass, vel.x, adj_mass, adj_vel.x);
+                    }
+                    if offset.y != 0 {
+                        vel.y = collision(mass, vel.y, adj_mass, adj_vel.y);
+                    }
                 }
             }
 
-            let sub_step_delta = (vel - skip).signum(); // - skip doesnt work!!!
+            let sub_step_delta = (vel % n as i8).signum(); // HERE
             let dst = (pos.as_ivec2() + sub_step_delta.as_ivec2()).as_uvec2();
             let dst_i = Shape::linearize(dst.into()) as usize;
-
             let dst_cell = self.read[dst_i];
 
             if dst_cell.is_some() {
-                let mut dst_vel = dst_cell.velocity_unchecked();
+                let dst_vel = dst_cell.velocity_unchecked();
                 let dst_mass = dst_cell.mass();
-                collision((mass, &mut vel), (dst_mass, &mut dst_vel));
+                
+                if dst.x != 0 {
+                    vel.x = collision(mass, vel.x, dst_mass, dst_vel.x);
+                }
+                if dst.y != 0 {
+                    vel.y = collision(mass, vel.y, dst_mass, dst_vel.y);
+                }
 
                 self.write[i].store(cell.with_velocity(vel), Ordering::Relaxed);
             } else {
@@ -158,7 +166,15 @@ impl SubStepGrid {
                     if dst_cell.is_some() {
                         let mut dst_vel = dst_cell.velocity_unchecked();
                         let dst_mass = dst_cell.mass();
-                        collision((mass, &mut vel), (dst_mass, &mut dst_vel));
+                        
+                        if dst.x != 0 {
+                            vel.x = collision(mass, vel.x, dst_mass, dst_vel.x);
+                            dst_vel.x = collision(dst_mass, dst_vel.x, mass, vel.x);
+                        }
+                        if dst.y != 0 {
+                            vel.y = collision(mass, vel.y, dst_mass, dst_vel.y);
+                            dst_vel.y = collision(dst_mass, dst_vel.y, mass, vel.y);
+                        }
                         
                         self.write[i].store(cell.with_velocity(vel), Ordering::Relaxed);
 
@@ -172,7 +188,12 @@ impl SubStepGrid {
     }
 }
 
-// should be two way compatable
-fn collision((mass_1, vel_1): (u8, &mut I8Vec2), (mass_2, vel_2): (u8, &mut I8Vec2)) {
-    todo!()
+fn collision(m1: u8, v1: i8, m2: u8, v2: i8) -> i8 {
+    let m1 = m1 as i8;
+    let m2 = m2 as i8;
+
+    // This function is meant for floating point arithmetic
+    // also I got it from AI
+    let v1_new = ((m1 - m2) * v1 + 2 * m2 * v2) / (m1 + m2);
+    v1_new.clamp(MIN_SPEED, MAX_SPEED)
 }
