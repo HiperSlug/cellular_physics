@@ -11,3 +11,4 @@ opt-level = 3
 
 [dependencies]
 bevy = "0.17.0-rc.2"
+ndshape = "0.3.0"
