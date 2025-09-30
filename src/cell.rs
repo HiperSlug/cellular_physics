@@ -198,4 +198,8 @@ impl AtomicPackedCell {
             .map(|c| PackedCell(c))
             .map_err(|c| PackedCell(c))
     }
+
+    pub fn load(&self, order: Ordering) -> PackedCell {
+        PackedCell(self.0.load(order))
+    }
 }
