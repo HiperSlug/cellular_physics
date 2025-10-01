@@ -1,9 +1,13 @@
 use bevy::prelude::*;
-use enum_map::{Enum, EnumMap};
+use enum_map::EnumMap;
 use ndshape::{ConstPow2Shape2u32, ConstShape};
 use std::{ptr::NonNull, sync::atomic::Ordering};
 
-use crate::cell::{Cell, MaybeAtomicPackedCell, PackedCell, StaticCell};
+use crate::{
+    Dir::{self, *},
+    OFFSETS,
+    cell::{Cell, MaybeAtomicPackedCell, PackedCell, StaticCell},
+};
 
 const BITS: u32 = 6;
 const LEN: i32 = 1 << BITS;
@@ -14,30 +18,6 @@ const MAX: i32 = LEN - 1;
 
 type Shape = ConstPow2Shape2u32<BITS, BITS>;
 
-const OFFSETS: [IVec2; 8] = [
-    ivec2(-1, 0),  // left
-    ivec2(1, 0),   // right
-    ivec2(-1, -1), // down_left
-    ivec2(0, -1),  // down_middle
-    ivec2(1, -1),  // down_right
-    ivec2(-1, 1),  // up_left
-    ivec2(0, 1),   // up_middle
-    ivec2(1, 1),   // up_right
-];
-
-use Dir::*;
-#[derive(Enum)]
-enum Dir {
-    Left,
-    Right,
-    Down,
-    Up,
-    DownLeft,
-    DownRight,
-    UpLeft,
-    UpRight,
-}
-
 use Bounds::*;
 enum Bounds {
     Within,
@@ -45,7 +25,7 @@ enum Bounds {
     Less,
 }
 
-struct Chunk {
+pub struct Chunk {
     read: [PackedCell; AREA],
     /// Atomic when:
     /// 1. Parrallel neighbor access
@@ -56,7 +36,7 @@ struct Chunk {
 }
 
 impl Chunk {
-    fn push_writes(&mut self) {
+    pub fn push_writes(&mut self) {
         // TODO switch to a ptr copy if its not auto vectorized
         for (read, write) in self.read.iter_mut().zip(self.write.iter()) {
             // Safety: Atomics are only nececcary when running functions on chunks that use its `neighbors`.
@@ -64,7 +44,7 @@ impl Chunk {
         }
     }
 
-    fn sub_step(&mut self, n: u8) {
+    pub fn sub_step(&mut self, n: u8) {
         for i in 0..AREA {
             let Some(Cell::Dynamic(original_cell)) = self.read[i].unpack() else {
                 continue;
@@ -73,7 +53,7 @@ impl Chunk {
             let pos = delinearize(i);
 
             // pull collisions
-            for offset in OFFSETS {
+            for (_, offset) in OFFSETS {
                 let adj_pos = pos + offset;
                 let adj_i = wrapping_linearize(adj_pos);
 
@@ -190,6 +170,14 @@ impl Chunk {
                 }
             }
         }
+    }
+
+    pub fn add_neighbor(&mut self, neighbor: &mut Self, dir: Dir) {
+        self.neighbors[dir] = Some(NonNull::new(neighbor as *mut _).unwrap());
+    }
+
+    pub fn remove_neighbor(&mut self, dir: Dir) {
+        self.neighbors[dir] = None;
     }
 }
 

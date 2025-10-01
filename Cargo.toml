@@ -10,7 +10,7 @@ opt-level = 1
 opt-level = 3
 
 [dependencies]
-bevy = "0.17.0-rc.2"
+bevy = "0.17.1"
 enum-map = "2.7.3"
 ndshape = "0.3.0"
 nonmax = "0.5.5"
