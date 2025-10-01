@@ -18,6 +18,19 @@ const MAX: i32 = LEN - 1;
 
 type Shape = ConstPow2Shape2u32<BITS, BITS>;
 
+#[repr(transparent)]
+struct SendNonNull<T>(NonNull<T>);
+
+impl<T> Clone for SendNonNull<T> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<T> Copy for SendNonNull<T> {}
+
+unsafe impl<T> Send for SendNonNull<T> {}
+
 use Bounds::*;
 enum Bounds {
     Within,
@@ -32,7 +45,7 @@ pub struct Chunk {
     /// 2. If the cell `is_edge`
     /// 3. If the cell was `None` last `sub_step`
     write: [MaybeAtomicPackedCell; AREA],
-    neighbors: EnumMap<Dir, Option<NonNull<Chunk>>>,
+    neighbors: EnumMap<Dir, Option<SendNonNull<Chunk>>>,
 }
 
 impl Chunk {
@@ -58,7 +71,7 @@ impl Chunk {
                 let adj_i = wrapping_linearize(adj_pos);
 
                 // Safety: `read` is shared
-                let nn_read = |nn: NonNull<Chunk>| unsafe { (*nn.as_ptr()).read[adj_i].unpack() };
+                let nn_read = |nn: SendNonNull<Chunk>| unsafe { (*nn.0.as_ptr()).read[adj_i].unpack() };
 
                 let Some(Cell::Dynamic(adj_cell)) = (match bounds(adj_pos) {
                     [Within, Within] => self.read[adj_i].unpack(),
@@ -94,8 +107,8 @@ impl Chunk {
             let dst = pos + delta;
             let dst_i = wrapping_linearize(dst);
 
-            fn ptr_to_ref<'a>(nn: NonNull<Chunk>) -> &'a Chunk {
-                unsafe { &*nn.as_ptr() }
+            fn ptr_to_ref<'a>(nn: SendNonNull<Chunk>) -> &'a Chunk {
+                unsafe { &*nn.0.as_ptr() }
             }
 
             // Safety: Only used to read shared state or mutate shared atomics
@@ -173,7 +186,7 @@ impl Chunk {
     }
 
     pub fn add_neighbor(&mut self, neighbor: &mut Self, dir: Dir) {
-        self.neighbors[dir] = Some(NonNull::new(neighbor as *mut _).unwrap());
+        self.neighbors[dir] = Some(SendNonNull(NonNull::new(neighbor as *mut _).unwrap()));
     }
 
     pub fn remove_neighbor(&mut self, dir: Dir) {

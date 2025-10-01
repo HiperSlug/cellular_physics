@@ -1,4 +1,4 @@
-use bevy::{platform::collections::HashMap, prelude::*};
+use bevy::{platform::collections::HashMap, prelude::*, tasks::{ComputeTaskPool, ParallelSliceMut}};
 use enum_map::{Enum, EnumMap};
 use std::array::from_fn;
 
@@ -9,6 +9,17 @@ struct ChunkMap {
 }
 
 impl ChunkMap {
+    fn step(&mut self) {
+        let mut vec = self.map.iter_mut().collect::<Vec<_>>();
+        for n in 0..3 {
+            vec.par_splat_map_mut(ComputeTaskPool::get(), None, |_, slice| {
+                for (_, c) in slice {
+                    c.sub_step(n);
+                }
+            });
+        }
+    }
+
     fn insert_with(&mut self, k: IVec2, f: impl Fn() -> Chunk) {
         self.map.insert(k, f());
 
