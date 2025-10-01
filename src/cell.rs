@@ -1,5 +1,8 @@
 use bevy::{math::I8Vec2, prelude::*};
-use std::sync::atomic::{AtomicU8, Ordering};
+use std::{
+    mem::ManuallyDrop,
+    sync::atomic::{AtomicU8, Ordering},
+};
 
 const MAX_SPEED: i8 = 3;
 
@@ -185,7 +188,7 @@ impl AtomicPackedCell {
         self.0.store(val.0, order);
     }
 
-    pub fn update(
+    pub fn fetch_update(
         &self,
         set_order: Ordering,
         fetch_order: Ordering,
@@ -202,4 +205,9 @@ impl AtomicPackedCell {
     pub fn load(&self, order: Ordering) -> PackedCell {
         PackedCell(self.0.load(order))
     }
+}
+
+pub union MaybeAtomicPackedCell {
+    pub atomic: ManuallyDrop<AtomicPackedCell>,
+    pub plain: PackedCell,
 }
