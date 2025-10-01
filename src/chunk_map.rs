@@ -10,18 +10,23 @@ struct ChunkMap {
 
 impl ChunkMap {
     fn step(&mut self) {
-        let mut vec = self.map.iter_mut().collect::<Vec<_>>();
+        let mut vec = self.map.values_mut().collect::<Vec<_>>();
         for n in 0..3 {
             vec.par_splat_map_mut(ComputeTaskPool::get(), None, |_, slice| {
-                for (_, c) in slice {
+                for c in slice {
                     c.sub_step(n);
+                }
+            });
+            vec.par_splat_map_mut(ComputeTaskPool::get(), None, |_, slice| {
+                for c in slice {
+                    c.push_writes();
                 }
             });
         }
     }
 
-    fn insert_with(&mut self, k: IVec2, f: impl Fn() -> Chunk) {
-        self.map.insert(k, f());
+    fn insert(&mut self, k: IVec2, v: Chunk) {
+        self.map.insert(k, v);
 
         let ks: [_; 9] = from_fn(|i| {
             if i < Dir::LENGTH {

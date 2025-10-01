@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use enum_map::EnumMap;
 use ndshape::{ConstPow2Shape2u32, ConstShape};
-use std::{ptr::NonNull, sync::atomic::Ordering};
+use std::{mem::transmute, ptr::NonNull, sync::atomic::Ordering};
 
 use crate::{
     Dir::{self, *},
@@ -29,6 +29,7 @@ impl<T> Clone for SendNonNull<T> {
 
 impl<T> Copy for SendNonNull<T> {}
 
+/// Safety: i'm really cool
 unsafe impl<T> Send for SendNonNull<T> {}
 
 use Bounds::*;
@@ -49,6 +50,12 @@ pub struct Chunk {
 }
 
 impl Chunk {
+    const EMPTY: Self = Self {
+        read: [PackedCell::NONE; AREA],
+        write: unsafe { transmute([PackedCell::NONE; AREA]) },
+        neighbors: EnumMap::from_array([None; 8])
+    };
+
     pub fn push_writes(&mut self) {
         // TODO switch to a ptr copy if its not auto vectorized
         for (read, write) in self.read.iter_mut().zip(self.write.iter()) {
