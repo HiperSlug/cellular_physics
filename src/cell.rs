@@ -25,27 +25,25 @@ const I8_TO_I3_MASK: u8 = MASK_3;
 const MASS_SHIFT: u32 = 6;
 const RESTITUTION_SHIFT: u32 = 4;
 
-const MAX_RESTITUTION: i8 = (1 << (u8::BITS - RESTITUTION_SHIFT)) - 1;
-
 /// -4 reprented as an i3
 const I3_NEG_4: u8 = 0x04;
 const INVALID_X: u8 = I3_NEG_4 << X_SHIFT;
 const INVALID_Y: u8 = I3_NEG_4 << Y_SHIFT;
 
-const INV_NONE_LOWEST_Y_BIT: u8 = (!INVALID_Y) & (1 << Y_SHIFT);
+// const LOW_VALID_X: u8 = (!INVALID_X) & (1 << X_SHIFT);
+const LOW_VALID_Y: u8 = (!INVALID_Y) & (1 << Y_SHIFT);
 
-/// Y bit pattern marking NONE
-const NONE_BIT_PATTERN: u8 = INVALID_Y;
-/// X bit pattern marking STATIC
-const STATIC_X_BIT_PATTERN: u8 = INVALID_X;
-/// STATIC bit pattern that also uses a set bottom Y bit to ensure SOMEness.
-const SOME_STATIC_BIT_PATTERN: u8 = STATIC_X_BIT_PATTERN | INV_NONE_LOWEST_Y_BIT;
+const NONE_VALUE: u8 = INVALID_X | INVALID_Y;
+const STATIC_VALUE: u8 = INVALID_X;
+const SOME_STATIC_VALUE: u8 = STATIC_VALUE | LOW_VALID_Y;
 
-#[derive(Clone, Copy)]
+const MAX_RESTITUTION: i8 = 15;
+
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct PackedCell(u8);
 
 impl PackedCell {
-    pub const NONE: Self = Self(NONE_BIT_PATTERN);
+    pub const NONE: Self = Self(NONE_VALUE);
 
     pub fn pack(cell_opt: Option<Cell>) -> Self {
         if let Some(cell) = cell_opt {
@@ -71,11 +69,11 @@ impl PackedCell {
     }
 
     pub fn is_some(self) -> bool {
-        self.0 != NONE_BIT_PATTERN
+        self.0 != NONE_VALUE
     }
 
     pub fn is_dynamic(self) -> bool {
-        self.0 & X_MASK != STATIC_X_BIT_PATTERN
+        self.0 & X_MASK != STATIC_VALUE
     }
 
     fn velocity(self) -> I8Vec2 {
@@ -93,6 +91,7 @@ impl PackedCell {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Cell {
     Static(StaticCell),
     Dynamic(DynamicCell),
@@ -107,7 +106,7 @@ impl Cell {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct StaticCell {
     pub restitution: i8,
 }
@@ -118,11 +117,11 @@ impl StaticCell {
 
         let restitution = (self.restitution as u8) << RESTITUTION_SHIFT;
 
-        PackedCell(restitution | SOME_STATIC_BIT_PATTERN)
+        PackedCell(restitution | SOME_STATIC_VALUE)
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct DynamicCell {
     pub mass: i8,
     pub velocity: I8Vec2,
@@ -152,16 +151,45 @@ impl DynamicCell {
             .as_ivec2()
     }
 
-    pub fn dynamic_collision_x(&mut self, other: &DynamicCell) {
+    pub fn two_way_dynamic_collision(&mut self, other: &mut Self, delta: IVec2) {
+        if delta.x != 0 {
+            self.dynamic_collision_x(other);
+            other.dynamic_collision_x(self);
+        }
+        if delta.y != 0 {
+            self.dynamic_collision_y(other);
+            other.dynamic_collision_y(self);
+        }
+    }
+
+    pub fn dynamic_collision(&mut self, other: &Self, delta: IVec2) {
+        if delta.x != 0 {
+            self.dynamic_collision_x(other);
+        }
+        if delta.y != 0 {
+            self.dynamic_collision_y(other);
+        }
+    }
+
+    pub fn dynamic_collision_x(&mut self, other: &Self) {
         self.velocity.x =
             dynamic_collision(self.velocity.x, self.mass, other.velocity.x, other.mass)
                 .clamp(-MAX_SPEED, MAX_SPEED);
     }
 
-    pub fn dynamic_collision_y(&mut self, other: &DynamicCell) {
+    pub fn dynamic_collision_y(&mut self, other: &Self) {
         self.velocity.y =
             dynamic_collision(self.velocity.y, self.mass, other.velocity.y, other.mass)
                 .clamp(-MAX_SPEED, MAX_SPEED);
+    }
+
+    pub fn static_collision(&mut self, other: &StaticCell, delta: IVec2) {
+        if delta.x != 0 {
+            self.static_collision_x(other);
+        }
+        if delta.y != 0 {
+            self.static_collision_y(other);
+        }
     }
 
     pub fn static_collision_x(&mut self, other: &StaticCell) {
