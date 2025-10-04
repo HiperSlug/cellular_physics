@@ -4,7 +4,7 @@ use std::{
     sync::atomic::{AtomicU8, Ordering},
 };
 
-const MAX_SPEED: i8 = 3;
+pub const MAX_SPEED: i8 = 3;
 
 const MAX_VELOCITY: I8Vec2 = I8Vec2::splat(MAX_SPEED);
 const MIN_VELOCITY: I8Vec2 = I8Vec2::splat(-MAX_SPEED);
@@ -44,14 +44,6 @@ pub struct PackedCell(u8);
 
 impl PackedCell {
     pub const NONE: Self = Self(NONE_VALUE);
-
-    pub fn pack(cell_opt: Option<Cell>) -> Self {
-        if let Some(cell) = cell_opt {
-            cell.pack()
-        } else {
-            Self::NONE
-        }
-    }
 
     pub fn unpack(self) -> Option<Cell> {
         self.is_some().then(|| {
@@ -95,15 +87,6 @@ impl PackedCell {
 pub enum Cell {
     Static(StaticCell),
     Dynamic(DynamicCell),
-}
-
-impl Cell {
-    pub fn pack(self) -> PackedCell {
-        match self {
-            Cell::Dynamic(c) => c.pack(),
-            Cell::Static(c) => c.pack(),
-        }
-    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -193,45 +176,42 @@ impl DynamicCell {
     }
 
     pub fn static_collision_x(&mut self, other: &StaticCell) {
-        self.velocity.x = static_collision(self.velocity.x, other.restitution);
+        self.velocity.x =
+            static_collision(self.velocity.x, other.restitution).clamp(-MAX_SPEED, MAX_SPEED);
     }
 
     pub fn static_collision_y(&mut self, other: &StaticCell) {
-        self.velocity.y = static_collision(self.velocity.y, other.restitution);
+        self.velocity.y =
+            static_collision(self.velocity.y, other.restitution).clamp(-MAX_SPEED, MAX_SPEED);
+    }
+
+    pub fn gravity(&mut self) {
+        self.velocity.y = (self.velocity.y - 1).max(-MAX_SPEED);
     }
 }
 
 fn dynamic_collision(v1: i8, m1: i8, v2: i8, m2: i8) -> i8 {
+    let v1 = v1 * 3 / 2;
+    let v2 = v2 * 3 / 2;
     ((m1 - m2) * v1 + 2 * m2 * v2) / (m1 + m2)
 }
 
 fn static_collision(v: i8, r: i8) -> i8 {
-    v * r / MAX_RESTITUTION
+    -v * r / 7
 }
 
 pub struct AtomicPackedCell(AtomicU8);
 
 impl AtomicPackedCell {
-    pub fn store(&self, val: PackedCell, order: Ordering) {
-        self.0.store(val.0, order);
-    }
-
-    pub fn fetch_update(
+    pub fn update(
         &self,
         set_order: Ordering,
         fetch_order: Ordering,
-        mut f: impl FnMut(PackedCell) -> Option<PackedCell>,
-    ) -> Result<PackedCell, PackedCell> {
-        self.0
-            .fetch_update(set_order, fetch_order, |inner| {
-                f(PackedCell(inner)).map(|p| p.0)
-            })
-            .map(|c| PackedCell(c))
-            .map_err(|c| PackedCell(c))
-    }
-
-    pub fn load(&self, order: Ordering) -> PackedCell {
-        PackedCell(self.0.load(order))
+        mut f: impl FnMut(PackedCell) -> PackedCell,
+    ) {
+        let _ = self
+            .0
+            .fetch_update(set_order, fetch_order, |c| Some(f(PackedCell(c)).0));
     }
 }
 

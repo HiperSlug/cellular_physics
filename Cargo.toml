@@ -10,8 +10,9 @@ opt-level = 1
 opt-level = 3
 
 [dependencies]
-bevy = "0.17.1"
+bevy = "0.17.0-rc.2"
 enum-map = "2.7.3"
 ndshape = "0.3.0"
 nonmax = "0.5.5"
 parking_lot = "0.12.4"
+rand = "0.9.2"

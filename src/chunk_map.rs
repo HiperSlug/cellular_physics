@@ -1,31 +1,46 @@
-use bevy::{platform::collections::HashMap, prelude::*, tasks::{ComputeTaskPool, ParallelSliceMut}};
+use bevy::{
+    platform::collections::HashMap,
+    prelude::*,
+    tasks::{ComputeTaskPool, ParallelSliceMut},
+};
 use enum_map::{Enum, EnumMap};
 use std::array::from_fn;
 
-use crate::{Dir, OFFSETS, chunk::Chunk};
+use crate::{
+    Dir, OFFSETS,
+    chunk::{Chunk, LEN},
+};
 
-struct ChunkMap {
+#[derive(Resource, Default)]
+pub struct ChunkMap {
     map: HashMap<IVec2, Chunk>,
 }
 
 impl ChunkMap {
-    fn step(&mut self) {
+    pub fn sub_step(&mut self, n: u8) {
         let mut vec = self.map.values_mut().collect::<Vec<_>>();
-        for n in 0..3 {
+
+        if n == 0 {
             vec.par_splat_map_mut(ComputeTaskPool::get(), None, |_, slice| {
                 for c in slice {
-                    c.sub_step(n);
-                }
-            });
-            vec.par_splat_map_mut(ComputeTaskPool::get(), None, |_, slice| {
-                for c in slice {
-                    c.push_writes();
+                    c.gravity();
                 }
             });
         }
+
+        vec.par_splat_map_mut(ComputeTaskPool::get(), None, |_, slice| {
+            for c in slice {
+                c.sub_step(n);
+            }
+        });
+        vec.par_splat_map_mut(ComputeTaskPool::get(), None, |_, slice| {
+            for c in slice {
+                c.push_writes();
+            }
+        });
     }
 
-    fn insert(&mut self, k: IVec2, v: Chunk) {
+    pub fn insert(&mut self, k: IVec2, v: Chunk) {
         self.map.insert(k, v);
 
         let ks: [_; 9] = from_fn(|i| {
@@ -52,7 +67,7 @@ impl ChunkMap {
         }
     }
 
-    fn remove(&mut self, k: IVec2) {
+    pub fn remove(&mut self, k: IVec2) {
         let ks = OFFSETS.map(|_, o| k + o);
         let ref_ks = from_fn(|i| &ks[Dir::from_usize(i)]);
 
@@ -65,5 +80,35 @@ impl ChunkMap {
         }
 
         self.map.remove(&k);
+    }
+
+    pub fn iter_some(&self) -> impl Iterator<Item = IVec2> {
+        self.map
+            .iter()
+            .flat_map(|(p, c)| c.iter_some().map(|s| s + (*p * LEN)))
+    }
+
+    pub fn set_dynamic(&mut self, cell_pos: IVec2) {
+        let chunk_pos = cell_pos.div_euclid(IVec2::splat(LEN));
+        if let Some(chunk) = self.map.get_mut(&chunk_pos) {
+            let local_cell_pos = cell_pos.rem_euclid(IVec2::splat(LEN)).as_uvec2();
+            chunk.set_dynamic(local_cell_pos)
+        }
+    }
+
+    pub fn set_static(&mut self, cell_pos: IVec2) {
+        let chunk_pos = cell_pos.div_euclid(IVec2::splat(LEN));
+        if let Some(chunk) = self.map.get_mut(&chunk_pos) {
+            let local_cell_pos = cell_pos.rem_euclid(IVec2::splat(LEN)).as_uvec2();
+            chunk.set_static(local_cell_pos)
+        }
+    }
+
+    pub fn set_none(&mut self, cell_pos: IVec2) {
+        let chunk_pos = cell_pos.div_euclid(IVec2::splat(LEN));
+        if let Some(chunk) = self.map.get_mut(&chunk_pos) {
+            let local_cell_pos = cell_pos.rem_euclid(IVec2::splat(LEN)).as_uvec2();
+            chunk.set_none(local_cell_pos)
+        }
     }
 }

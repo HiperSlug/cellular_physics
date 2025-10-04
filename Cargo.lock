@@ -1691,6 +1691,7 @@ dependencies = [
  "ndshape",
  "nonmax",
  "parking_lot",
+ "rand",
 ]
 
 [[package]]
