@@ -9,6 +9,13 @@ opt-level = 1
 [profile.dev.package."*"]
 opt-level = 3
 
+[profile.release]
+opt-level = "z"
+lto = "fat"
+codegen-units = 1
+strip = true
+panic = "abort"
+
 [dependencies]
 bevy = "0.17.0-rc.2"
 enum-map = "2.7.3"

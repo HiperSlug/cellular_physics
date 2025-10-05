@@ -86,50 +86,50 @@ impl Chunk {
 
                 let sub_step_delta = adj_cell.sub_step_delta(n);
 
-                if sub_step_delta.x != 0 && sub_step_delta.y != 0 {
-                    let x_pos = adj_pos + ivec2(sub_step_delta.x, 0);
-                    let x_i = wrapping_linearize(x_pos);
+                // if sub_step_delta.x != 0 && sub_step_delta.y != 0 {
+                //     let x_pos = adj_pos + ivec2(sub_step_delta.x, 0);
+                //     let x_i = wrapping_linearize(x_pos);
 
-                    let nn_read = |nn: NonNull<Chunk>| unsafe { (*nn.as_ptr()).read[x_i].unpack() };
+                //     let nn_read = |nn: NonNull<Chunk>| unsafe { (*nn.as_ptr()).read[x_i].unpack() };
 
-                    let x_cell = match bounds(x_pos) {
-                        [Within, Within] => self.read[x_i].unpack(),
-                        [Less, Within] => self.neighbors[Left].and_then(nn_read),
-                        [Greater, Within] => self.neighbors[Right].and_then(nn_read),
-                        [Within, Less] => self.neighbors[Down].and_then(nn_read),
-                        [Within, Greater] => self.neighbors[Up].and_then(nn_read),
-                        [Less, Less] => self.neighbors[DownLeft].and_then(nn_read),
-                        [Greater, Less] => self.neighbors[DownRight].and_then(nn_read),
-                        [Less, Greater] => self.neighbors[UpLeft].and_then(nn_read),
-                        [Greater, Greater] => self.neighbors[UpRight].and_then(nn_read),
-                    };
+                //     let x_cell = match bounds(x_pos) {
+                //         [Within, Within] => self.read[x_i].unpack(),
+                //         [Less, Within] => self.neighbors[Left].and_then(nn_read),
+                //         [Greater, Within] => self.neighbors[Right].and_then(nn_read),
+                //         [Within, Less] => self.neighbors[Down].and_then(nn_read),
+                //         [Within, Greater] => self.neighbors[Up].and_then(nn_read),
+                //         [Less, Less] => self.neighbors[DownLeft].and_then(nn_read),
+                //         [Greater, Less] => self.neighbors[DownRight].and_then(nn_read),
+                //         [Less, Greater] => self.neighbors[UpLeft].and_then(nn_read),
+                //         [Greater, Greater] => self.neighbors[UpRight].and_then(nn_read),
+                //     };
 
-                    let y_pos = adj_pos + ivec2(0, sub_step_delta.y);
-                    let y_i = wrapping_linearize(y_pos);
+                //     let y_pos = adj_pos + ivec2(0, sub_step_delta.y);
+                //     let y_i = wrapping_linearize(y_pos);
 
-                    let nn_read = |nn: NonNull<Chunk>| unsafe { (*nn.as_ptr()).read[y_i].unpack() };
+                //     let nn_read = |nn: NonNull<Chunk>| unsafe { (*nn.as_ptr()).read[y_i].unpack() };
                     
-                    let y_cell = match bounds(y_pos) {
-                        [Within, Within] => self.read[y_i].unpack(),
-                        [Less, Within] => self.neighbors[Left].and_then(nn_read),
-                        [Greater, Within] => self.neighbors[Right].and_then(nn_read),
-                        [Within, Less] => self.neighbors[Down].and_then(nn_read),
-                        [Within, Greater] => self.neighbors[Up].and_then(nn_read),
-                        [Less, Less] => self.neighbors[DownLeft].and_then(nn_read),
-                        [Greater, Less] => self.neighbors[DownRight].and_then(nn_read),
-                        [Less, Greater] => self.neighbors[UpLeft].and_then(nn_read),
-                        [Greater, Greater] => self.neighbors[UpRight].and_then(nn_read),
-                    };
+                //     let y_cell = match bounds(y_pos) {
+                //         [Within, Within] => self.read[y_i].unpack(),
+                //         [Less, Within] => self.neighbors[Left].and_then(nn_read),
+                //         [Greater, Within] => self.neighbors[Right].and_then(nn_read),
+                //         [Within, Less] => self.neighbors[Down].and_then(nn_read),
+                //         [Within, Greater] => self.neighbors[Up].and_then(nn_read),
+                //         [Less, Less] => self.neighbors[DownLeft].and_then(nn_read),
+                //         [Greater, Less] => self.neighbors[DownRight].and_then(nn_read),
+                //         [Less, Greater] => self.neighbors[UpLeft].and_then(nn_read),
+                //         [Greater, Greater] => self.neighbors[UpRight].and_then(nn_read),
+                //     };
 
-                    if !x_cell.is_some() && !y_cell.is_some() {
-                        cell.dynamic_collision(&adj_cell, sub_step_delta);
-                    }
-                } else {
+                //     if !x_cell.is_some() && !y_cell.is_some() {
+                //         cell.dynamic_collision(&adj_cell, sub_step_delta);
+                //     }
+                // } else {
                     let dst = pos + sub_step_delta;
                     if dst == pos {
                         cell.dynamic_collision(&adj_cell, sub_step_delta);
                     }
-                }
+                // }
             }
 
             // push collision
@@ -142,140 +142,140 @@ impl Chunk {
                 continue;
             }
 
-            if delta.x != 0 && delta.y != 0 {
-                let x_pos = pos + ivec2(delta.x, 0);
-                let x_i = wrapping_linearize(x_pos);
+            // if delta.x != 0 && delta.y != 0 {
+            //     let x_pos = pos + ivec2(delta.x, 0);
+            //     let x_i = wrapping_linearize(x_pos);
 
-                let nn_read = |nn: NonNull<Chunk>| unsafe { (*nn.as_ptr()).read[x_i].unpack() };
+            //     let nn_read = |nn: NonNull<Chunk>| unsafe { (*nn.as_ptr()).read[x_i].unpack() };
 
-                let x_cell = match bounds(x_pos) {
-                    [Within, Within] => self.read[x_i].unpack(),
-                    [Less, Within] => self.neighbors[Left].and_then(nn_read),
-                    [Greater, Within] => self.neighbors[Right].and_then(nn_read),
-                    [Within, Less] => self.neighbors[Down].and_then(nn_read),
-                    [Within, Greater] => self.neighbors[Up].and_then(nn_read),
-                    [Less, Less] => self.neighbors[DownLeft].and_then(nn_read),
-                    [Greater, Less] => self.neighbors[DownRight].and_then(nn_read),
-                    [Less, Greater] => self.neighbors[UpLeft].and_then(nn_read),
-                    [Greater, Greater] => self.neighbors[UpRight].and_then(nn_read),
-                };
+            //     let x_cell = match bounds(x_pos) {
+            //         [Within, Within] => self.read[x_i].unpack(),
+            //         [Less, Within] => self.neighbors[Left].and_then(nn_read),
+            //         [Greater, Within] => self.neighbors[Right].and_then(nn_read),
+            //         [Within, Less] => self.neighbors[Down].and_then(nn_read),
+            //         [Within, Greater] => self.neighbors[Up].and_then(nn_read),
+            //         [Less, Less] => self.neighbors[DownLeft].and_then(nn_read),
+            //         [Greater, Less] => self.neighbors[DownRight].and_then(nn_read),
+            //         [Less, Greater] => self.neighbors[UpLeft].and_then(nn_read),
+            //         [Greater, Greater] => self.neighbors[UpRight].and_then(nn_read),
+            //     };
 
-                let y_pos = pos + ivec2(0, delta.y);
-                let y_i = wrapping_linearize(y_pos);
+            //     let y_pos = pos + ivec2(0, delta.y);
+            //     let y_i = wrapping_linearize(y_pos);
 
-                let nn_read = |nn: NonNull<Chunk>| unsafe { (*nn.as_ptr()).read[y_i].unpack() };
+            //     let nn_read = |nn: NonNull<Chunk>| unsafe { (*nn.as_ptr()).read[y_i].unpack() };
                 
-                let y_cell = match bounds(y_pos) {
-                    [Within, Within] => self.read[y_i].unpack(),
-                    [Less, Within] => self.neighbors[Left].and_then(nn_read),
-                    [Greater, Within] => self.neighbors[Right].and_then(nn_read),
-                    [Within, Less] => self.neighbors[Down].and_then(nn_read),
-                    [Within, Greater] => self.neighbors[Up].and_then(nn_read),
-                    [Less, Less] => self.neighbors[DownLeft].and_then(nn_read),
-                    [Greater, Less] => self.neighbors[DownRight].and_then(nn_read),
-                    [Less, Greater] => self.neighbors[UpLeft].and_then(nn_read),
-                    [Greater, Greater] => self.neighbors[UpRight].and_then(nn_read),
-                };
+            //     let y_cell = match bounds(y_pos) {
+            //         [Within, Within] => self.read[y_i].unpack(),
+            //         [Less, Within] => self.neighbors[Left].and_then(nn_read),
+            //         [Greater, Within] => self.neighbors[Right].and_then(nn_read),
+            //         [Within, Less] => self.neighbors[Down].and_then(nn_read),
+            //         [Within, Greater] => self.neighbors[Up].and_then(nn_read),
+            //         [Less, Less] => self.neighbors[DownLeft].and_then(nn_read),
+            //         [Greater, Less] => self.neighbors[DownRight].and_then(nn_read),
+            //         [Less, Greater] => self.neighbors[UpLeft].and_then(nn_read),
+            //         [Greater, Greater] => self.neighbors[UpRight].and_then(nn_read),
+            //     };
                 
-                match (x_cell, y_cell) {
-                    (None, None) => {
-                        let dst = pos + delta;
-                        let dst_i = wrapping_linearize(dst);
+            //     match (x_cell, y_cell) {
+            //         (None, None) => {
+            //             let dst = pos + delta;
+            //             let dst_i = wrapping_linearize(dst);
 
-                        fn ptr_to_ref<'a>(nn: NonNull<Chunk>) -> &'a Chunk {
-                            unsafe { &*nn.as_ptr() }
-                        }
+            //             fn ptr_to_ref<'a>(nn: NonNull<Chunk>) -> &'a Chunk {
+            //                 unsafe { &*nn.as_ptr() }
+            //             }
 
-                        // Safety: Only used to read shared state or mutate shared atomics
-                        let Some(chunk) = (match bounds(dst) {
-                            [Within, Within] => Some(&*self),
-                            [Less, Within] => self.neighbors[Left].map(ptr_to_ref),
-                            [Greater, Within] => self.neighbors[Right].map(ptr_to_ref),
-                            [Within, Less] => self.neighbors[Down].map(ptr_to_ref),
-                            [Within, Greater] => self.neighbors[Up].map(ptr_to_ref),
-                            [Less, Less] => self.neighbors[DownLeft].map(ptr_to_ref),
-                            [Greater, Less] => self.neighbors[DownRight].map(ptr_to_ref),
-                            [Less, Greater] => self.neighbors[UpLeft].map(ptr_to_ref),
-                            [Greater, Greater] => self.neighbors[UpRight].map(ptr_to_ref),
-                        }) else {
-                            cell.static_collision(&StaticCell { restitution: 15 }, delta);
-                            self.write[i].plain = cell.pack();
-                            continue;
-                        };
+            //             // Safety: Only used to read shared state or mutate shared atomics
+            //             let Some(chunk) = (match bounds(dst) {
+            //                 [Within, Within] => Some(&*self),
+            //                 [Less, Within] => self.neighbors[Left].map(ptr_to_ref),
+            //                 [Greater, Within] => self.neighbors[Right].map(ptr_to_ref),
+            //                 [Within, Less] => self.neighbors[Down].map(ptr_to_ref),
+            //                 [Within, Greater] => self.neighbors[Up].map(ptr_to_ref),
+            //                 [Less, Less] => self.neighbors[DownLeft].map(ptr_to_ref),
+            //                 [Greater, Less] => self.neighbors[DownRight].map(ptr_to_ref),
+            //                 [Less, Greater] => self.neighbors[UpLeft].map(ptr_to_ref),
+            //                 [Greater, Greater] => self.neighbors[UpRight].map(ptr_to_ref),
+            //             }) else {
+            //                 cell.static_collision(&StaticCell { restitution: 15 }, delta);
+            //                 self.write[i].plain = cell.pack();
+            //                 continue;
+            //             };
 
-                        if let Some(dst_cell) = chunk.read[dst_i].unpack() {
-                            match dst_cell {
-                                Cell::Dynamic(dst_cell) => cell.dynamic_collision(&dst_cell, delta),
-                                Cell::Static(dst_cell) => cell.static_collision(&dst_cell, delta),
-                            }
+            //             if let Some(dst_cell) = chunk.read[dst_i].unpack() {
+            //                 match dst_cell {
+            //                     Cell::Dynamic(dst_cell) => cell.dynamic_collision(&dst_cell, delta),
+            //                     Cell::Static(dst_cell) => cell.static_collision(&dst_cell, delta),
+            //                 }
 
-                            self.write[i].plain = cell.pack();
-                        } else {
-                            if is_edge_or_ob(dst) {
-                                let mut replacement = PackedCell::NONE;
+            //                 self.write[i].plain = cell.pack();
+            //             } else {
+            //                 if is_edge_or_ob(dst) {
+            //                     let mut replacement = PackedCell::NONE;
 
-                                // Safety: Atomic b/c `is_edge`
-                                let atomic = unsafe { &chunk.write[dst_i].atomic };
+            //                     // Safety: Atomic b/c `is_edge`
+            //                     let atomic = unsafe { &chunk.write[dst_i].atomic };
 
-                                atomic.update(Ordering::AcqRel, Ordering::Acquire, |dst_cell| {
-                                    if let Some(dst_cell) = dst_cell.unpack() {
-                                        if let Cell::Dynamic(mut dst_cell) = dst_cell {
-                                            cell.two_way_dynamic_collision(&mut dst_cell, delta);
+            //                     atomic.update(Ordering::AcqRel, Ordering::Acquire, |dst_cell| {
+            //                         if let Some(dst_cell) = dst_cell.unpack() {
+            //                             if let Cell::Dynamic(mut dst_cell) = dst_cell {
+            //                                 cell.two_way_dynamic_collision(&mut dst_cell, delta);
 
-                                            replacement = cell.pack();
+            //                                 replacement = cell.pack();
 
-                                            dst_cell.pack()
-                                        } else {
-                                            unreachable!()
-                                        }
-                                    } else {
-                                        replacement = PackedCell::NONE;
+            //                                 dst_cell.pack()
+            //                             } else {
+            //                                 unreachable!()
+            //                             }
+            //                         } else {
+            //                             replacement = PackedCell::NONE;
 
-                                        cell.pack()
-                                    }
-                                });
+            //                             cell.pack()
+            //                         }
+            //                     });
 
-                                self.write[i].plain = replacement;
-                            } else {
-                                // this branch only occurs when `chunk == self`
+            //                     self.write[i].plain = replacement;
+            //                 } else {
+            //                     // this branch only occurs when `chunk == self`
 
-                                // Safety: `!is_edge` no other threads can mutate `dst`
-                                let plain = unsafe { &mut self.write[dst_i].plain };
+            //                     // Safety: `!is_edge` no other threads can mutate `dst`
+            //                     let plain = unsafe { &mut self.write[dst_i].plain };
 
-                                if let Some(dst_cell) = plain.unpack() {
-                                    if let Cell::Dynamic(mut dst_cell) = dst_cell {
-                                        cell.two_way_dynamic_collision(&mut dst_cell, delta);
+            //                     if let Some(dst_cell) = plain.unpack() {
+            //                         if let Cell::Dynamic(mut dst_cell) = dst_cell {
+            //                             cell.two_way_dynamic_collision(&mut dst_cell, delta);
 
-                                        *plain = dst_cell.pack();
-                                        self.write[i].plain = cell.pack();
-                                    } else {
-                                        unreachable!()
-                                    }
-                                } else {
-                                    *plain = cell.pack();
-                                    self.write[i].plain = PackedCell::NONE;
-                                };
-                            }
-                        }
-                    },
-                    (x_cell, y_cell) => {
-                        if let Some(x_cell) = x_cell {
-                            match x_cell {
-                                Cell::Dynamic(x_cell) => cell.dynamic_collision_x(&x_cell),
-                                Cell::Static(x_cell) => cell.static_collision_x(&x_cell),
-                            }
-                        }
-                        if let Some(y_cell) = y_cell {
-                            match y_cell {
-                                Cell::Dynamic(y_cell) => cell.dynamic_collision_y(&y_cell),
-                                Cell::Static(y_cell) => cell.static_collision_y(&y_cell),
-                            }
-                        }
+            //                             *plain = dst_cell.pack();
+            //                             self.write[i].plain = cell.pack();
+            //                         } else {
+            //                             unreachable!()
+            //                         }
+            //                     } else {
+            //                         *plain = cell.pack();
+            //                         self.write[i].plain = PackedCell::NONE;
+            //                     };
+            //                 }
+            //             }
+            //         },
+            //         (x_cell, y_cell) => {
+            //             if let Some(x_cell) = x_cell {
+            //                 match x_cell {
+            //                     Cell::Dynamic(x_cell) => cell.dynamic_collision_x(&x_cell),
+            //                     Cell::Static(x_cell) => cell.static_collision_x(&x_cell),
+            //                 }
+            //             }
+            //             if let Some(y_cell) = y_cell {
+            //                 match y_cell {
+            //                     Cell::Dynamic(y_cell) => cell.dynamic_collision_y(&y_cell),
+            //                     Cell::Static(y_cell) => cell.static_collision_y(&y_cell),
+            //                 }
+            //             }
 
-                        self.write[i].plain = cell.pack();
-                    },
-                }
-            } else {
+            //             self.write[i].plain = cell.pack();
+            //         },
+            //     }
+            // } else {
                 let dst = pos + delta;
                 let dst_i = wrapping_linearize(dst);
 
@@ -354,7 +354,7 @@ impl Chunk {
                         };
                     }
                 }
-            }
+            // }
         }
     }
 
